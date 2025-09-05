@@ -289,12 +289,21 @@ async def _main(
     logger.debug("Completed %s", out_file)
 
 
+async def list_voices():
+    voices = await edge_tts.list_voices()
+    for voice in sorted(voices, key=lambda voice: voice["ShortName"]):
+        print(f"Name: {voice['ShortName']}")
+        print(f"  Gender: {voice['Gender']}")
+        print(f"  Locale: {voice['Locale']}")
+
+
 def main():
     dep_check()
 
     parser = argparse.ArgumentParser(description="Converts srt to mp3 using edge-tts")
-    parser.add_argument("srt_file", help="srt file to convert")
-    parser.add_argument("out_file", help="output file")
+    parser.add_argument("--list-voices", help="list available voices", action="store_true")
+    parser.add_argument("srt_file", help="srt file to convert", nargs="?")
+    parser.add_argument("out_file", help="output file", nargs="?")
     parser.add_argument("--voice", help="voice name", default="en-US-AriaNeural")
     parser.add_argument("--parallel-batch-size", help="request batch size", default=50)
     parser.add_argument("--default-speed", help="default speed", default="+0%")
@@ -306,6 +315,13 @@ def main():
         action="store_true",
     )
     args = parser.parse_args()
+
+    if args.list_voices:
+        asyncio.run(list_voices())
+        sys.exit(0)
+
+    if not args.srt_file or not args.out_file:
+        parser.error("the following arguments are required: srt_file, out_file")
 
     srt_data = pysrt.open(args.srt_file)
     voice = args.voice
